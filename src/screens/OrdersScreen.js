@@ -1,9 +1,11 @@
-import React, { useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, Dimensions } from 'react-native';
+import React, { useMemo, useRef, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, Dimensions, ActivityIndicator } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import MapView, { Marker } from 'react-native-maps'
 import { Entypo  } from '@expo/vector-icons';
+import { PermissionsAndroid } from 'react-native';
+import * as Location from "expo-location";
 
 import OrderItem from '../components/orderItem'
 import orders from '../data/orders'
@@ -14,12 +16,48 @@ const screenHeight = Dimensions.get('screen').height
 const OrdersScreen = () => {
     const bottomSheetRef = useRef(null)
     const snapPoints = useMemo(() => ['12%', '95%'], []);
+
+    const [location, setLocation] = useState(null);
+    const [errorMsg, setErrorMsg] = useState(null);
+  
+    useEffect(() => {
+      (async () => {
+        
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setErrorMsg('Permission to access location was denied');
+          return;
+        }
+  
+        let location = await Location.getCurrentPositionAsync({});
+        setLocation(location);
+      })();
+    }, []);
+  
+    if(!location) 
+    return <ActivityIndicator/>
+    
     return (
         <GestureHandlerRootView style={styles.gesture}>
             <View style={styles.mapContainer}>
                 <MapView style={styles.mapView} 
-                    showsUserLocation 
-                    followsUserLocation
+                    showsUserLocation={true}
+                    followsUserLocation={true}
+                    showsMyLocationButton={true}
+                    initialRegion={{
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                        latitudeDelta: 0.07,
+                        longitudeDelta: 0.07,
+                      }}
+                      onMapReady={async () => {
+                        
+                        PermissionsAndroid.request(
+                          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+                        ).then(granted => {
+                          alert(granted ? 'Location permission granted' : 'Location permission denied');
+                        });
+                      }}
                 >
                     {
                         orders.map((order) =>{
