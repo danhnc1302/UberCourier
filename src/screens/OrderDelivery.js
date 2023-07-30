@@ -1,15 +1,87 @@
-import React, { useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useMemo, useRef, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import BottomSheet from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler'; 
 import { FontAwesome, Fontisto, FontAwesome5  } from '@expo/vector-icons';
+import { PermissionsAndroid } from 'react-native';
+import * as Location from "expo-location";
+import MapView, { Marker } from 'react-native-maps'
+import { Entypo, MaterialIcons  } from '@expo/vector-icons';
+import MapViewDirections from 'react-native-maps-directions';
+
 import orders from '../data/orders'
+
+const screenWidth = Dimensions.get('screen').width
+const screenHeight = Dimensions.get('screen').height
 const order = orders[0]
 const OrderDelivery = () => {
     const bottomSheetRef = useRef(null)
     const snapPoints = useMemo(() => ['12%', '95%'], []);
+
+    const [dirverLocation, setDriverLocation] = useState(null);
+    const [errorMsg, setErrorMsg] = useState(null);
+
+    useEffect(() => {
+        (async () => {
+          
+          let { status } = await Location.requestForegroundPermissionsAsync();
+          if (status !== 'granted') {
+            setErrorMsg('Permission to access location was denied');
+            return;
+          }
+    
+          let location = await Location.getCurrentPositionAsync({});
+          setDriverLocation(location);
+        })();
+      }, []);
+    
+      if(!dirverLocation) 
+      return <ActivityIndicator style={{justifyContent: 'center', alignItems: 'center'}}/>
+
     return (
         <GestureHandlerRootView style={styles.gesture}>
+             <MapView style={styles.mapView} 
+                    showsUserLocation={true}
+                    followsUserLocation={true}
+                    showsMyLocationButton={true}
+                    initialRegion={{
+                        latitude: dirverLocation.coords.latitude,
+                        longitude: dirverLocation.coords.longitude,
+                        latitudeDelta: 0.07,
+                        longitudeDelta: 0.07,
+                      }}
+                      onMapReady={async () => {
+                        PermissionsAndroid.request(
+                          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+                        ).then(granted => {
+                          alert(granted ? 'Location permission granted' : 'Location permission denied');
+                        });
+                      }}
+                >
+                    <MapViewDirections
+                        origin={`${dirverLocation.coords.latitude},${dirverLocation.coords.longitude}`}
+                        destination={{latitude: order.User.lat, longitude: order.User.lng}}
+                        strokeWidth={10}
+                        strokeColor='#3FC060'
+                        apikey={"AIzaSyDKQXK6xPDeYO0jKbDMzeTmI2lmJTlJCVY"}
+                    />
+                    <Marker key={order.Restaurant.id} title={order.Restaurant.name} description={order.Restaurant.address} coordinate={{
+                        latitude: order.Restaurant.lat,
+                        longitude: order.Restaurant.lng,
+                    }}>
+                        <View style={{backgroundColor: 'green', padding: 5, borderRadius: 20}}>
+                            <Entypo name="shop" size={24} color="white" />
+                        </View>
+                    </Marker>
+                    <Marker key={order.User.id} title={order.User.name} description={order.User.address} coordinate={{
+                        latitude: order.User.lat,
+                        longitude: order.User.lng,
+                    }}>
+                        <View style={{backgroundColor: 'green', padding: 5, borderRadius: 20}}>
+                            <MaterialIcons name="restaurant" size={24} color="white" />
+                        </View>
+                    </Marker>
+                </MapView>
           <BottomSheet
             ref={bottomSheetRef}
             snapPoints={snapPoints}
@@ -118,7 +190,12 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         color: '#DDDDDD'
-    }
+    },
+    mapView: {
+        ...StyleSheet.absoluteFillObject,
+        width: screenWidth,
+        height: screenHeight,
+    },
 })
 
 export default OrderDelivery;

@@ -17,7 +17,7 @@ const OrdersScreen = () => {
     const bottomSheetRef = useRef(null)
     const snapPoints = useMemo(() => ['12%', '95%'], []);
 
-    const [location, setLocation] = useState(null);
+    const [dirverLocation, setDriverLocation] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
   
     useEffect(() => {
@@ -30,12 +30,12 @@ const OrdersScreen = () => {
         }
   
         let location = await Location.getCurrentPositionAsync({});
-        setLocation(location);
+        setDriverLocation(location);
       })();
     }, []);
   
-    if(!location) 
-    return <ActivityIndicator/>
+    if(!dirverLocation) 
+    return <ActivityIndicator style={{justifyContent: 'center', alignItems: 'center'}}/>
     
     return (
         <GestureHandlerRootView style={styles.gesture}>
@@ -45,13 +45,12 @@ const OrdersScreen = () => {
                     followsUserLocation={true}
                     showsMyLocationButton={true}
                     initialRegion={{
-                        latitude: location.coords.latitude,
-                        longitude: location.coords.longitude,
+                        latitude: dirverLocation.coords.latitude,
+                        longitude: dirverLocation.coords.longitude,
                         latitudeDelta: 0.07,
                         longitudeDelta: 0.07,
                       }}
                       onMapReady={async () => {
-                        
                         PermissionsAndroid.request(
                           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
                         ).then(granted => {
