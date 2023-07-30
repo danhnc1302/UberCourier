@@ -14,16 +14,22 @@ import orders from '../data/orders'
 const screenWidth = Dimensions.get('screen').width
 const screenHeight = Dimensions.get('screen').height
 const order = orders[0]
+const ORDERS_STATUSES = {
+    READY_FOR_PICKUP: 'READY_FOR_PICKUP',
+    ACCEPTED: 'ACCEPTED',
+    PICKED_UP: 'PICKED_UP'
+}
 const OrderDelivery = () => {
     const bottomSheetRef = useRef(null)
     const snapPoints = useMemo(() => ['12%', '95%'], []);
 
     const [dirverLocation, setDriverLocation] = useState(null);
+    const [totalMinutes, setTotalMinutes] = useState(0);
+    const [totalKm, setTotalKm] = useState(0);
     const [errorMsg, setErrorMsg] = useState(null);
 
     useEffect(() => {
         (async () => {
-          
           let { status } = await Location.requestForegroundPermissionsAsync();
           if (status !== 'granted') {
             setErrorMsg('Permission to access location was denied');
@@ -33,6 +39,14 @@ const OrderDelivery = () => {
           let location = await Location.getCurrentPositionAsync({});
           setDriverLocation(location);
         })();
+
+        Location.watchPositionAsync({
+            accuracy: Location.Accuracy.High,
+            distanceInterval: 100
+        }, (updatedLocation) => {
+            setDriverLocation(updatedLocation)
+        })
+       
       }, []);
     
       if(!dirverLocation) 
@@ -62,8 +76,13 @@ const OrderDelivery = () => {
                         origin={`${dirverLocation.coords.latitude},${dirverLocation.coords.longitude}`}
                         destination={{latitude: order.User.lat, longitude: order.User.lng}}
                         strokeWidth={10}
+                        waypoints={[`${order.Restaurant.lat},${order.Restaurant.lng}`]}
                         strokeColor='#3FC060'
                         apikey={"AIzaSyDKQXK6xPDeYO0jKbDMzeTmI2lmJTlJCVY"}
+                        onReady={(result) => {
+                            setTotalMinutes(result.duration)
+                            setTotalKm(result.distance)
+                        }}
                     />
                     <Marker key={order.Restaurant.id} title={order.Restaurant.name} description={order.Restaurant.address} coordinate={{
                         latitude: order.Restaurant.lat,
@@ -89,9 +108,9 @@ const OrderDelivery = () => {
           >
             <View style={styles.contentContainer}>
                 <View style={styles.header}>
-                    <Text style={styles.headertext}>14 min</Text>
+                    <Text style={styles.headertext}>{totalMinutes.toFixed(0)} min</Text>
                     <FontAwesome name="shopping-bag" size={30} color="#3FC060" style={styles.shoppingBag}/>
-                    <Text style={styles.headertext}>3.1 km</Text>
+                    <Text style={styles.headertext}>{totalKm.toFixed(1)} km</Text>
                 </View>
                 <View style={styles.body}>
                     <Text style={styles.restaurantName}>{order.Restaurant.name}</Text>
