@@ -1,4 +1,5 @@
 import React from 'react'
+import '@azure/core-asynciterator-polyfill';
 import Navigation from './navigation';
 import { NavigationContainer } from '@react-navigation/native';
 import { Amplify } from 'aws-amplify';
@@ -8,9 +9,9 @@ import AuthContextProvider from './src/contexts/AuthContext';
 Amplify.configure({
   ...awsconfig,
   Analytics: {
-    disables: true,
+    disabled: true,
   },
-})
+});
 
 const App = () => {
 

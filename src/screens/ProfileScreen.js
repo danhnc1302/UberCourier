@@ -1,4 +1,4 @@
-import { View, Text, TextInput, StyleSheet, Button, Alert, SafeAreaView, Pressable } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, Button, Alert, SafeAreaView, Pressable } from "react-native";
 import React, { useEffect, useState } from "react";
 import { Auth, DataStore } from "aws-amplify";
 import { useNavigation } from "@react-navigation/native";
@@ -19,10 +19,13 @@ const ProfileScreen = () => {
     const onSave = async () => {
       if(dbCourier) {
         await updateCourier()
+        console.log("1")
       } else {
         await createCourier()
+        console.log("2")
       }
-      navigation.navigate('OrdersScreen') 
+      console.log("2")
+      navigation.navigate("OrdersScreen")
     };
 
     const updateCourier = async () => {
@@ -39,9 +42,6 @@ const ProfileScreen = () => {
       try {
         const courier = await DataStore.save(new Courier({
           name, 
-          address, 
-          lat: 0, 
-          lng: 0, 
           sub,
           transportationMode,
         }))
@@ -62,10 +62,10 @@ const ProfileScreen = () => {
         />
         <View style={{ flexDirection: "row" }}>
         <Pressable
-          onPress={() => setTransportationMode(TransportationModes.BICYLING)}
+          onPress={() => setTransportationMode(TransportationModes.BICYCLING)}
           style={{
             backgroundColor:
-              transportationMode === TransportationModes.BICYLING
+              transportationMode === TransportationModes.BICYCLING
                 ? "#3FC060"
                 : "white",
             margin: 10,
@@ -94,7 +94,9 @@ const ProfileScreen = () => {
           <FontAwesome5 name="car" size={40} color="black" />
         </Pressable>
       </View>
-        <Button onPress={onSave} title="Save" />
+        <TouchableOpacity style={{justifyContent: 'center', alignItems: 'center', paddingVertical: 10, width: '100%', backgroundColor: 'blue'}} onPress={onSave} >
+          <Text style={{fontWeight: 'bold', color: 'white'}}>SAVE</Text>
+        </TouchableOpacity> 
         <Text
           onPress={() => Auth.signOut()}
           style={{ textAlign: "center", color: "red", margin: 10 }}
